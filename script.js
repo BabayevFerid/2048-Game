@@ -1,14 +1,19 @@
 const grid = document.getElementById("grid");
 const scoreDisplay = document.getElementById("score");
+const bestScoreDisplay = document.getElementById("best-score");
 const gameOverEl = document.getElementById("game-over");
+
 let squares = [];
 let score = 0;
+let bestScore = localStorage.getItem("bestScore") || 0;
 
+// Oyunu başlat
 function startGame() {
   grid.innerHTML = "";
   squares = [];
   score = 0;
   scoreDisplay.innerText = "Score: " + score;
+  bestScoreDisplay.innerText = "Best Score: " + bestScore;
   gameOverEl.style.display = "none";
 
   for (let i = 0; i < 16; i++) {
@@ -24,6 +29,7 @@ function startGame() {
   updateBoard();
 }
 
+// Yeni rəqəm yarat
 function generate() {
   let emptySquares = squares.filter(sq => sq.getAttribute("data-value") == 0);
   if (emptySquares.length === 0) return;
@@ -31,6 +37,7 @@ function generate() {
   randomSquare.setAttribute("data-value", Math.random() > 0.1 ? 2 : 4);
 }
 
+// Lövhəni yenilə
 function updateBoard() {
   squares.forEach(square => {
     let val = square.getAttribute("data-value");
@@ -40,8 +47,7 @@ function updateBoard() {
   });
 }
 
-// --- Hərəkət funksiyaları (moveLeft, moveRight, moveUp, moveDown) ---
-// eynidir əvvəlki kodla (burada saxlayıram)
+// Hərəkət funksiyaları (moveRight, moveLeft, moveUp, moveDown)
 function moveRight() {
   for (let i = 0; i < 16; i += 4) {
     let row = squares.slice(i, i + 4).map(sq => parseInt(sq.getAttribute("data-value")));
@@ -87,7 +93,7 @@ function moveDown() {
   }
 }
 
-// --- Combine funksiyaları ---
+// Birləşmə funksiyaları
 function combineRow() {
   for (let i = 0; i < 16; i++) {
     if (i % 4 !== 3) {
@@ -98,7 +104,7 @@ function combineRow() {
         squares[i].setAttribute("data-value", newVal);
         squares[i + 1].setAttribute("data-value", 0);
         score += newVal;
-        scoreDisplay.innerText = "Score: " + score;
+        updateScore();
       }
     }
   }
@@ -112,12 +118,22 @@ function combineColumn() {
       squares[i].setAttribute("data-value", newVal);
       squares[i + 4].setAttribute("data-value", 0);
       score += newVal;
-      scoreDisplay.innerText = "Score: " + score;
+      updateScore();
     }
   }
 }
 
-// --- Klaviatura ---
+// Score-u yenilə
+function updateScore() {
+  scoreDisplay.innerText = "Score: " + score;
+  if (score > bestScore) {
+    bestScore = score;
+    localStorage.setItem("bestScore", bestScore);
+    bestScoreDisplay.innerText = "Best Score: " + bestScore;
+  }
+}
+
+// Klaviatura
 function control(e) {
   let moved = false;
   if (e.keyCode === 39) { moveRight(); combineRow(); moveRight(); moved = true; }
@@ -133,7 +149,7 @@ function control(e) {
 }
 document.addEventListener("keyup", control);
 
-// --- Mobil swipe ---
+// Mobil swipe
 let touchStartX = 0, touchStartY = 0;
 document.addEventListener("touchstart", e => {
   touchStartX = e.changedTouches[0].screenX;
@@ -144,15 +160,15 @@ document.addEventListener("touchend", e => {
   let dy = e.changedTouches[0].screenY - touchStartY;
 
   if (Math.abs(dx) > Math.abs(dy)) {
-    if (dx > 50) control({keyCode: 39}); // sağ
-    else if (dx < -50) control({keyCode: 37}); // sol
+    if (dx > 50) control({keyCode: 39});
+    else if (dx < -50) control({keyCode: 37});
   } else {
-    if (dy > 50) control({keyCode: 40}); // aşağı
-    else if (dy < -50) control({keyCode: 38}); // yuxarı
+    if (dy > 50) control({keyCode: 40});
+    else if (dy < -50) control({keyCode: 38});
   }
 });
 
-// --- Game Over yoxlama ---
+// Game Over yoxlama
 function checkGameOver() {
   let emptySquares = squares.filter(sq => sq.getAttribute("data-value") == 0);
   if (emptySquares.length > 0) return;
